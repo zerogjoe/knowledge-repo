@@ -187,6 +187,12 @@ db_upgrade.add_argument('-c', '--config', default=None, help="The config file fr
 db_upgrade.add_argument('-m', '--message', help="The message to use for the database revision.")
 db_upgrade.add_argument('--autogenerate', action='store_true', help="Whether alembic should automatically populate the migration script.")
 
+db_downgrade = subparsers.add_parser('db_downgrade', help='Downgrade the database to the schema identified by a revision number. Default is the second-to-last im')
+db_downgrade.set_defaults(action='db_downgrade')
+db_downgrade.add_argument('-db', '--dburi', help='The SQLAlchemy database uri.')
+db_downgrade.add_argument('-c', '--config', default=None, help="The config file from which to read server configuration.")
+db_downgrade.add_argument('-r', '--revision', default='-1', help="The revision to downgrade to.")
+
 # Show version and exit
 if args.version:
     print('Embedded/active version: {}'.format(knowledge_repo.__version__))
@@ -333,6 +339,11 @@ app = knowledge_repo.KnowledgeRepository.for_uri({}).get_app(db_uri={}, debug={}
 elif args.action == 'db_upgrade':
     app = repo.get_app(db_uri=args.dburi, debug=args.debug, config=args.config)
     app.db_upgrade()
+
+elif args.action == 'db_downgrade':
+    app = repo.get_app(db_uri=args.dburi, debug=args.debug, config=args.config)
+    app.db_downgrade(revision=args.revision)
+
 
 elif args.action == 'db_migrate':
     app = repo.get_app(debug=args.debug, db_uri=args.dburi)
