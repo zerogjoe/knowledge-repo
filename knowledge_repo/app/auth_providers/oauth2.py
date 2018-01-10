@@ -82,6 +82,7 @@ class OAuth2Provider(KnowledgeAuthProvider):
              client_id=None,
              client_secret=None,
              user_info_mapping=None,
+             verify_https=None,
              validate=None):
 
         (self.base_url,
@@ -93,6 +94,7 @@ class OAuth2Provider(KnowledgeAuthProvider):
          self.client_id,
          self.client_secret,
          self.user_info_mapping,
+         self.verify_https,
          validate) = _resolve_oauth_config(
             self.name,
             locals(),
@@ -106,10 +108,14 @@ class OAuth2Provider(KnowledgeAuthProvider):
             'client_id',
             'client_secret',
             'user_info_mapping',
+            'verify_https',
             'validate'
         )
         if validate is not None:
             self.validate = lambda x: validate(self, x)
+
+        if self.verify_https is None:
+            self.verify_https = True
 
         redirect_url = self.app.config['SERVER_NAME'] or 'localhost:7000'
         if self.app.config['APPLICATION_ROOT']:
@@ -135,7 +141,7 @@ class OAuth2Provider(KnowledgeAuthProvider):
         state = request.args.get('state')
 
         self.oauth_client.state = state
-        self.oauth_client.fetch_token(self.token_url, client_secret=self.client_secret, code=code)
+        self.oauth_client.fetch_token(self.token_url, client_secret=self.client_secret, code=code, verify=self.verify_https)
 
         return self.extract_user_from_api()
 
@@ -151,7 +157,7 @@ class OAuth2Provider(KnowledgeAuthProvider):
                 return d[key]
             raise RuntimeError("Invalid key type: {}.".format(key))
 
-        response = self.oauth_client.get(self.get_endpoint_url(self.user_info_endpoint))
+        response = self.oauth_client.get(self.get_endpoint_url(self.user_info_endpoint), verify=self.verify_https)
         try:
             r = json.loads(response.content)
 
